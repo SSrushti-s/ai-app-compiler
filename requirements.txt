@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+langgraph
+google-genai
+pydantic>=2.0
+python-dotenv
