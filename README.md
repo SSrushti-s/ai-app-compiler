@@ -28,11 +28,11 @@ User Prompt
 
 ↓
 
-Stage 1+2: Intent Extraction & System Design  (1 Gemini API call)
+Stage 1+2: Intent Extraction & System Design  (1 groq API call)
 
 ↓
 
-Stage 3:   Schema Generation — DB + API + UI  (2 Gemini API calls)
+Stage 3:   Schema Generation — DB + API + UI  (2 groq API calls)
 
 ↓
 
@@ -92,7 +92,7 @@ Zero API calls. Proves output is executable by simulating:
 | Layer | Technology |
 |---|---|
 | Pipeline Orchestration | LangGraph |
-| LLM | Google Gemini 2.5 Flash |
+| LLM | llama-3.3-70b-versatile |
 | Schema Validation | Pydantic v2 |
 | API Server | FastAPI |
 | Frontend | Vanilla HTML/CSS/JS |
@@ -120,11 +120,11 @@ pip install -r requirements.txt
 
 ### 4. Set up environment variables
 Create a `.env` file:
-GEMINI_API_KEY_1=your_key_here
+GROQ_API_KEY_1=your_key_here
 
-GEMINI_API_KEY_2=your_key_here
+GROQ_API_KEY_2=your_key_here
 
-GEMINI_API_KEY_3=your_key_here
+GROQ_API_KEY_3=your_key_here
 
 ### 5. Run the server
 ```bash
@@ -180,7 +180,7 @@ Tracks: success rate, latency, retry count, failure type per prompt.
 
 | Problem | Solution |
 |---|---|
-| Gemini returns wrong JSON types | Pydantic `field_validator` auto-coercion |
+| groq returns wrong JSON types | Pydantic `field_validator` auto-coercion |
 | 503 server overload | 3-model × 3-key rotation with backoff |
 | 429 quota exhaustion | Automatic key rotation |
 | Schema inconsistencies | Stage 4 auto-repair (up to 3 attempts) |
