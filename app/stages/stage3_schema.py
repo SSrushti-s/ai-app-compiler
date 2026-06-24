@@ -3,7 +3,7 @@
 import json
 from pydantic import BaseModel
 from typing import List, Dict
-from app.utils.gemini_client import generate_with_fallback
+from app.utils.groq_client import generate_with_fallback
 from pydantic import BaseModel, field_validator
 from typing import List, Dict, Union
 
@@ -21,7 +21,6 @@ class DBTable(BaseModel):
     @classmethod
     def coerce_none_to_list(cls, v):
         return v if v is not None else []
-# In stage3_schema.py — replace the APIEndpoint class with this:
 
 class APIEndpoint(BaseModel):
     method: str

@@ -3,7 +3,7 @@
 import json
 from pydantic import BaseModel
 from typing import List
-from app.utils.gemini_client import generate_with_fallback
+from app.utils.groq_client import generate_with_fallback
 
 class SystemDesign(BaseModel):
     modules: List[str]

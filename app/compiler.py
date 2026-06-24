@@ -12,7 +12,7 @@ class CompilerState(TypedDict):
     errors: List[str]                # Tracks any cross-layer sync or validation errors
 # --- STAGE NODES ---
 # Add this import at the top of compiler.py
-from app.utils.gemini_client import generate_intent_and_design
+from app.utils.groq_client import generate_intent_and_design
 
 # Replace the two separate nodes with one combined node:
 def intent_and_design_node(state: CompilerState) -> Dict[str, Any]:

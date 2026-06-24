@@ -73,7 +73,6 @@ def root():
     }
 
 
-# Replace the compile_app function signature:
 @app.post("/compile", response_model=CompileResponse)
 async def compile_app(request: CompileRequest):
     if not request.prompt or len(request.prompt.strip()) < 3:
