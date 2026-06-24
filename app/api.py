@@ -3,6 +3,7 @@
 import json
 import time
 from fastapi import FastAPI, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Any, Dict, List
@@ -72,8 +73,9 @@ def root():
     }
 
 
+# Replace the compile_app function signature:
 @app.post("/compile", response_model=CompileResponse)
-def compile_app(request: CompileRequest):
+async def compile_app(request: CompileRequest):
     if not request.prompt or len(request.prompt.strip()) < 3:
         raise HTTPException(status_code=400, detail="Prompt is too short or empty.")
 
@@ -88,13 +90,11 @@ def compile_app(request: CompileRequest):
             "errors": []
         }
 
-        output = compiler_engine.invoke(initial_input)
+        # Run in threadpool so async server doesn't block
+        output = await run_in_threadpool(compiler_engine.invoke, initial_input)
         latency = round(time.time() - start, 2)
 
-        # Run runtime simulation on the final schema
-        runtime_report = simulate_runtime(output["final_schema"])
-
-        # Extract assumptions made
+        runtime_report = await run_in_threadpool(simulate_runtime, output["final_schema"])
         assumptions = extract_assumptions(request.prompt, output["intent_ir"])
 
         return CompileResponse(

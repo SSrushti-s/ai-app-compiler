@@ -38,12 +38,12 @@ def generate_with_fallback(prompt: str) -> str:
         except Exception as e:
             err = str(e)
             if "503" in err:
-                wait = 20 if idx < 3 else 40
+                wait = 30 if idx < 3 else 60
                 print(f"  503 overload. Waiting {wait}s before next attempt...")
                 time.sleep(wait)
             elif "429" in err:
                 print(f"  429 quota on key {key_num}. Switching...")
-                time.sleep(5)
+                time.sleep(10)
             else:
                 print(f"  Unexpected error: {e}")
                 time.sleep(5)

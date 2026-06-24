@@ -3,7 +3,7 @@ services:
     name: ai-app-compiler
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.api:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn app.api:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 300
     envVars:
       - key: GEMINI_API_KEY
         sync: false
