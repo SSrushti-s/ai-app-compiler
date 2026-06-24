@@ -9,18 +9,18 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; padding: 40px 20px; }
     .container { max-width: 900px; margin: 0 auto; }
-    h1 { font-size: 2rem; color: #7c6af7; margin-bottom: 8px; }
+    h1 { font-size: 2rem; color: #b94b4b; margin-bottom: 8px; }
     p.subtitle { color: #888; margin-bottom: 32px; }
     textarea { width: 100%; height: 120px; background: #1e2130; border: 1px solid #333; border-radius: 8px; color: #e0e0e0; padding: 14px; font-size: 15px; resize: vertical; }
-    button { margin-top: 12px; padding: 12px 32px; background: #7c6af7; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
-    button:hover { background: #6a57e0; }
+    button { margin-top: 12px; padding: 12px 32px; background: #8b3e3e; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+    button:hover { background: #7c2727; }
     button:disabled { background: #444; cursor: not-allowed; }
     .status { margin-top: 20px; padding: 12px 16px; border-radius: 8px; font-size: 14px; }
     .status.loading { background: #1e2130; color: #aaa; }
     .status.success { background: #0d2e1a; color: #4caf82; border: 1px solid #2a6644; }
     .status.error { background: #2e0d0d; color: #f47c7c; border: 1px solid #6e2020; }
     .section { margin-top: 24px; }
-    .section h3 { font-size: 1rem; color: #7c6af7; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .section h3 { font-size: 1rem; color: #b939e0; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
     pre { background: #1e2130; border: 1px solid #2a2d3e; border-radius: 8px; padding: 16px; overflow-x: auto; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
     .meta { display: flex; gap: 20px; margin-top: 16px; flex-wrap: wrap; }
     .meta-item { background: #1e2130; border-radius: 8px; padding: 12px 20px; text-align: center; }
@@ -33,10 +33,10 @@
 </head>
 <body>
   <div class="container">
-    <h1>⚙️ AI App Compiler</h1>
+    <h1> AI App Compiler</h1>
     <p class="subtitle">Natural language → structured schema → executable app</p>
 
-    <textarea id="prompt" placeholder="Describe your app... e.g. Build a CRM with login, contacts, dashboard, role-based access, and premium plan with payments."></textarea>
+    <textarea id="prompt" placeholder="Describe your app... "></textarea>
     <button id="compileBtn" onclick="compile()">Compile App</button>
 
     <div id="statusBox" style="display:none"></div>
@@ -58,7 +58,7 @@
       btn.disabled = true;
       btn.textContent = 'Compiling...';
 
-      showStatus('loading', '⏳ Running pipeline: Intent → Design → Schema → Validation → Runtime...');
+      showStatus('loading', ' Running pipeline: Intent → Design → Schema → Validation → Runtime...');
       hideAll();
 
       try {
@@ -70,11 +70,11 @@
         const data = await res.json();
 
         if (!res.ok) {
-          showStatus('error', `❌ Error: ${JSON.stringify(data.detail)}`);
+          showStatus('error', ` Error: ${JSON.stringify(data.detail)}`);
           return;
         }
 
-        showStatus('success', `✅ Compiled successfully in ${data.latency_seconds}s`);
+        showStatus('success', ` Compiled successfully in ${data.latency_seconds}s`);
 
         // Meta stats
         const schema = data.final_schema;
@@ -91,7 +91,7 @@
         if (data.assumptions?.length) {
           document.getElementById('assumptionsBox').style.display = 'block';
           document.getElementById('assumptionsBox').innerHTML = `
-            <h3>💡 Assumptions Made</h3>
+            <h3> Assumptions Made</h3>
             ${data.assumptions.map(a => `<span class="tag warning">${a}</span>`).join('')}
           `;
         }
@@ -100,18 +100,18 @@
         if (data.errors?.length) {
           document.getElementById('errorsBox').style.display = 'block';
           document.getElementById('errorsBox').innerHTML = `
-            <h3>⚠️ Validation Errors</h3>
+            <h3> Validation Errors</h3>
             ${data.errors.map(e => `<span class="tag error">${e}</span>`).join('')}
           `;
         }
 
-        showSection('irBox', '📋 Intent IR', data.intent_ir);
-        showSection('designBox', '🏗️ System Design', data.system_design);
-        showSection('schemaBox', '📐 Final Schema', data.final_schema);
-        showSection('runtimeBox', '⚡ Runtime Report', data.runtime_report);
+        showSection('irBox', ' Intent IR', data.intent_ir);
+        showSection('designBox', ' System Design', data.system_design);
+        showSection('schemaBox', ' Final Schema', data.final_schema);
+        showSection('runtimeBox', ' Runtime Report', data.runtime_report);
 
       } catch (err) {
-        showStatus('error', `❌ Network error: ${err.message}`);
+        showStatus('error', ` Error: ${err.message}`);
       } finally {
         btn.disabled = false;
         btn.textContent = 'Compile App';
