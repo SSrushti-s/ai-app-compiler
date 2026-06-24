@@ -11,3 +11,18 @@ services:
         sync: false
       - key: GEMINI_API_KEY3
         sync: false
+      - key: GEMINI_API_KEY4
+        sync: false
+      - key: GEMINI_API_KEY5
+        sync: false
+      - key: GEMINI_API_KEY6
+        sync: false
+      - key: GEMINI_API_KEY7
+        sync: false
+      - key: GEMINI_API_KEY8
+        sync: false
+      - key: GEMINI_API_KEY9
+        sync: false
+      - key: GEMINI_API_KEY10
+        sync: false
+      

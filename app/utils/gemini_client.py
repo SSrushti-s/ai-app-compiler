@@ -6,9 +6,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_KEYS = [
-    os.getenv("GEMINI_API_KEY"),
+    os.getenv("GEMINI_API_KEY1"),
     os.getenv("GEMINI_API_KEY2"),
     os.getenv("GEMINI_API_KEY3"),
+    os.getenv("GEMINI_API_KEY4"),
+    os.getenv("GEMINI_API_KEY5"),
+    os.getenv("GEMINI_API_KEY6"),
+    os.getenv("GEMINI_API_KEY7"),
+    os.getenv("GEMINI_API_KEY8"),
+    os.getenv("GEMINI_API_KEY9"),
+    os.getenv("GEMINI_API_KEY10"),
 ]
 
 MODELS = [
