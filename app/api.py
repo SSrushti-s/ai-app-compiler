@@ -1,7 +1,7 @@
 # app/api.py
 
 import json
-import time
+import time ,os
 from fastapi import FastAPI, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
@@ -119,6 +119,15 @@ async def compile_app(request: CompileRequest):
             }
         )
 
+@app.get("/debug-keys")
+def debug_keys():
+    result = {}
+    for i in range(1, 11):
+        key = os.getenv(f"GEMINI_API_KEY{i}")
+        result[f"KEY_{i}"] = "SET" if key else "NOT SET"
+    result["GEMINI_API_KEY"] = "SET" if os.getenv("GEMINI_API_KEY") else "NOT SET"
+    result["total_found"] = sum(1 for v in result.values() if v == "SET")
+    return result
 
 @app.get("/health")
 def health():

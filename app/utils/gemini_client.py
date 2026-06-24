@@ -5,18 +5,14 @@ from google import genai
 from dotenv import load_dotenv
 load_dotenv()
 
-API_KEYS = [
-    os.getenv("GEMINI_API_KEY1"),
-    os.getenv("GEMINI_API_KEY2"),
-    os.getenv("GEMINI_API_KEY3"),
-    os.getenv("GEMINI_API_KEY4"),
-    os.getenv("GEMINI_API_KEY5"),
-    os.getenv("GEMINI_API_KEY6"),
-    os.getenv("GEMINI_API_KEY7"),
-    os.getenv("GEMINI_API_KEY8"),
-    os.getenv("GEMINI_API_KEY9"),
-    os.getenv("GEMINI_API_KEY10"),
-]
+def get_api_keys():
+    keys = []
+    for i in range(1, 11):
+        key = os.getenv(f"GEMINI_API_KEY{i}")
+        if key and key.strip():
+            keys.append(key.strip())
+    print(f"  [CLIENT] Found {len(keys)} API key(s).")
+    return keys
 
 MODELS = [
     "gemini-2.5-flash",
@@ -25,13 +21,15 @@ MODELS = [
 ]
 
 def generate_with_fallback(prompt: str) -> str:
-    """Try each model x each key. On 503, wait longer before next attempt."""
+    api_keys = get_api_keys()  # ← fresh read every call
+
+    if not api_keys:
+        raise RuntimeError("No API keys found in environment variables.")
+
     attempts = []
     for model in MODELS:
-        for i, key in enumerate(API_KEYS):
-            if not key:
-                continue
-            attempts.append((model, key, i+1))
+        for i, key in enumerate(api_keys):
+            attempts.append((model, key, i + 1))
 
     for idx, (model, key, key_num) in enumerate(attempts):
         try:
