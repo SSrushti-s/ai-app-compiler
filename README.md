@@ -4,7 +4,7 @@
 
 A multi-stage AI compiler pipeline that converts plain English app descriptions into complete, validated, executable application schemas including UI, API, database, and auth layers.
 
-**Live Demo:** [your-render-url-here]
+**Live Demo:** (https://ai-app-compiler-3usm.onrender.com/ui)
 
 ---
 
