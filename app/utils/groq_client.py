@@ -15,6 +15,21 @@ MODELS = [
     "llama-3.3-70b-versatile",
 ]
 
+import re
+
+def extract_json(raw: str) -> str:
+    """Pull the outermost {...} JSON object out of a model response,
+    regardless of code fences or stray text around it."""
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = re.sub(r"^```(json)?", "", raw, flags=re.IGNORECASE).strip()
+        if raw.endswith("```"):
+            raw = raw[:-3].strip()
+    match = re.search(r"\{.*\}", raw, re.DOTALL)
+    if not match:
+        raise ValueError(f"No JSON object found in model output. Raw (first 300 chars): {raw[:300]!r}")
+    return match.group(0)
+    
 def get_groq_clients():
     """Read all 7 Groq keys fresh every call."""
     clients = []
@@ -176,13 +191,7 @@ def generate_intent_and_design(user_prompt: str) -> dict:
     prompt = COMBINED_STAGE_1_2_PROMPT.format(user_prompt=user_prompt)
     raw = generate_with_fallback(prompt)
 
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-    raw = raw.strip()
-
-    parsed = json.loads(raw)
+    parsed = json.loads(extract_json(raw))
     ir = IntentIR(**parsed["intent_ir"]).model_dump()
     design = SystemDesign(**parsed["system_design"]).model_dump()
 
