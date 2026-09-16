@@ -111,8 +111,11 @@ def generate_schema(system_design: dict, intent_ir: dict) -> dict:
         api_groups=json.dumps(system_design.get("api_groups", [])),
         auth_strategy=system_design.get("auth_strategy", "")
     )
-    raw1 = generate_with_fallback(prompt1)
-    part1 = json.loads(extract_json(raw1))
+        raw1 = generate_with_fallback(prompt1)
+    try:
+        part1 = json.loads(extract_json(raw1))
+    except (json.JSONDecodeError, ValueError) as e:
+        raise ValueError(f"Stage3 call 1 (DB/API) returned invalid JSON: {e}\nRaw (first 500 chars): {raw1[:500]!r}")
 
     # Call 2: UI + Auth rules (smaller, focused)
     prompt2 = UI_AUTH_PROMPT.format(
@@ -120,8 +123,11 @@ def generate_schema(system_design: dict, intent_ir: dict) -> dict:
         roles=json.dumps(intent_ir.get("roles", [])),
         workflows=json.dumps(system_design.get("workflows", []))
     )
-    raw2 = generate_with_fallback(prompt2)
-    part2 = json.loads(extract_json(raw2))
+        raw2 = generate_with_fallback(prompt2)
+    try:
+        part2 = json.loads(extract_json(raw2))
+    except (json.JSONDecodeError, ValueError) as e:
+        raise ValueError(f"Stage3 call 2 (UI/Auth) returned invalid JSON: {e}\nRaw (first 500 chars): {raw2[:500]!r}")
     # Merge both parts
     merged = {**part1, **part2}
     validated = AppSchema(**merged)
