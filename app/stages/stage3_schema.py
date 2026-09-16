@@ -6,6 +6,7 @@ from typing import List, Dict
 from app.utils.groq_client import generate_with_fallback
 from pydantic import BaseModel, field_validator
 from typing import List, Dict, Union
+from app.utils.groq_client import generate_with_fallback, extract_json
 
 class DBField(BaseModel):
     name: str
@@ -111,11 +112,7 @@ def generate_schema(system_design: dict, intent_ir: dict) -> dict:
         auth_strategy=system_design.get("auth_strategy", "")
     )
     raw1 = generate_with_fallback(prompt1)
-    if raw1.startswith("```"):
-        raw1 = raw1.split("```")[1]
-        if raw1.startswith("json"):
-            raw1 = raw1[4:]
-    part1 = json.loads(raw1.strip())
+    part1 = json.loads(extract_json(raw1))
 
     # Call 2: UI + Auth rules (smaller, focused)
     prompt2 = UI_AUTH_PROMPT.format(
@@ -124,12 +121,7 @@ def generate_schema(system_design: dict, intent_ir: dict) -> dict:
         workflows=json.dumps(system_design.get("workflows", []))
     )
     raw2 = generate_with_fallback(prompt2)
-    if raw2.startswith("```"):
-        raw2 = raw2.split("```")[1]
-        if raw2.startswith("json"):
-            raw2 = raw2[4:]
-    part2 = json.loads(raw2.strip())
-
+    part2 = json.loads(extract_json(raw2))
     # Merge both parts
     merged = {**part1, **part2}
     validated = AppSchema(**merged)
