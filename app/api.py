@@ -2,6 +2,7 @@
 
 import json
 import time ,os
+import traceback
 from fastapi import FastAPI, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
@@ -108,6 +109,7 @@ async def compile_app(request: CompileRequest):
         )
 
     except Exception as e:
+        traceback.print_exc()
         latency = round(time.time() - start, 2)
         raise HTTPException(
             status_code=500,
