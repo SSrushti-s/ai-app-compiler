@@ -76,7 +76,7 @@ def generate_with_fallback(prompt: str) -> str:
                     }
                 ],
                 temperature=0.3,
-                max_tokens=4000
+                max_tokens=6000
             )
 
             content = response.choices[0].message.content
