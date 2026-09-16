@@ -106,12 +106,12 @@ Workflows: {workflows}
 def generate_schema(system_design: dict, intent_ir: dict) -> dict:
     # Call 1: DB + API (smaller, focused)
     prompt1 = DB_API_PROMPT.format(
-        entities=json.dumps(intent_ir.get("entities", [])  ),
+        entities=json.dumps(intent_ir.get("entities", [])),
         roles=json.dumps(intent_ir.get("roles", [])),
         api_groups=json.dumps(system_design.get("api_groups", [])),
         auth_strategy=system_design.get("auth_strategy", "")
     )
-        raw1 = generate_with_fallback(prompt1)
+    raw1 = generate_with_fallback(prompt1)
     try:
         part1 = json.loads(extract_json(raw1))
     except (json.JSONDecodeError, ValueError) as e:
@@ -123,17 +123,17 @@ def generate_schema(system_design: dict, intent_ir: dict) -> dict:
         roles=json.dumps(intent_ir.get("roles", [])),
         workflows=json.dumps(system_design.get("workflows", []))
     )
-        raw2 = generate_with_fallback(prompt2)
+    raw2 = generate_with_fallback(prompt2)
     try:
         part2 = json.loads(extract_json(raw2))
     except (json.JSONDecodeError, ValueError) as e:
         raise ValueError(f"Stage3 call 2 (UI/Auth) returned invalid JSON: {e}\nRaw (first 500 chars): {raw2[:500]!r}")
+
     # Merge both parts
     merged = {**part1, **part2}
     validated = AppSchema(**merged)
     return validated.model_dump()
-
-
+    
 if __name__ == "__main__":
     from app.stages.stage1_intent import extract_intent
     from app.stages.stage2_design import generate_system_design
