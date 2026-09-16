@@ -26,43 +26,67 @@ def get_groq_clients():
     return clients
 
 def generate_with_fallback(prompt: str) -> str:
-    """Try each model x each Groq key. On failure, rotate."""
+    """Try each model x each Groq key. Log exact errors."""
+
     keys = get_groq_clients()
 
     if not keys:
-        raise RuntimeError("No GROQ keys found. Set GROQ_API_KEY1 through GROQ_API_KEY7 in environment variables.")
+        raise RuntimeError(
+            "No GROQ keys found. Set GROQ_API_KEY1 through GROQ_API_KEY7."
+        )
 
     attempts = []
+
     for model in MODELS:
         for key_num, key in keys:
             attempts.append((model, key, key_num))
 
+    last_error = None
+
     for idx, (model, key, key_num) in enumerate(attempts):
         try:
-            print(f"  → Trying model={model}, key={key_num}...")
+            print(
+                f"  → Trying model={model}, key={key_num}, "
+                f"attempt={idx + 1}/{len(attempts)}..."
+            )
+
             client = Groq(api_key=key)
+
             response = client.chat.completions.create(
                 model=model,
-                messages=[{"role": "user", "content": prompt}],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
                 temperature=0.3,
                 max_tokens=4000
             )
-            return response.choices[0].message.content.strip()
+
+            content = response.choices[0].message.content
+
+            if not content:
+                raise RuntimeError("Groq returned empty content")
+
+            print(f"  ✓ Success: model={model}, key={key_num}")
+
+            return content.strip()
+
         except Exception as e:
-            err = str(e)
-            if "429" in err or "rate" in err.lower():
-                print(f"  429 rate limit on key {key_num}. Switching...")
-                time.sleep(5)
-            elif "503" in err or "unavailable" in err.lower():
-                print(f"  503 overload. Waiting 15s...")
-                time.sleep(15)
-            else:
-                print(f"  Unexpected error: {e}")
-                time.sleep(3)
+            last_error = e
 
-    raise RuntimeError("All Groq models and keys exhausted. Try again in a few minutes.")
+            print(
+                f"  ✗ FAILED: model={model}, key={key_num}"
+            )
+            print(f"  ✗ ERROR TYPE: {type(e).__name__}")
+            print(f"  ✗ ERROR DETAILS: {repr(e)}")
 
+            time.sleep(1)
 
+    raise RuntimeError(
+        f"All Groq attempts failed. Last error: {repr(last_error)}"
+    )
 # --- Combined Stage 1+2 Prompt ---
 
 COMBINED_STAGE_1_2_PROMPT = """
