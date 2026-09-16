@@ -191,8 +191,10 @@ def generate_intent_and_design(user_prompt: str) -> dict:
     prompt = COMBINED_STAGE_1_2_PROMPT.format(user_prompt=user_prompt)
     raw = generate_with_fallback(prompt)
 
-    parsed = json.loads(extract_json(raw))
-    ir = IntentIR(**parsed["intent_ir"]).model_dump()
+    try:
+        parsed = json.loads(extract_json(raw))
+    except (json.JSONDecodeError, ValueError) as e:
+        raise ValueError(f"Stage1+2 combined call returned invalid JSON: {e}\nRaw (first 500 chars): {raw[:500]!r}")    ir = IntentIR(**parsed["intent_ir"]).model_dump()
     design = SystemDesign(**parsed["system_design"]).model_dump()
 
     return {"intent_ir": ir, "system_design": design}
