@@ -45,7 +45,7 @@ def generate_with_fallback(prompt: str) -> str:
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.3,
-                max_tokens=4000
+                max_tokens=4096
             )
             return response.choices[0].message.content.strip()
         except Exception as e:
