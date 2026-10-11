@@ -10,11 +10,26 @@ from typing import List
 load_dotenv()
 
 MODELS = [
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
     "llama-3.3-70b-versatile",
-    "llama-3.1-70b-versatile",
-    "mixtral-8x7b-32768",
 ]
 
+import re
+
+def extract_json(raw: str) -> str:
+    """Pull the outermost {...} JSON object out of a model response,
+    regardless of code fences or stray text around it."""
+    raw = raw.strip()
+    if raw.startswith("```"):
+        raw = re.sub(r"^```(json)?", "", raw, flags=re.IGNORECASE).strip()
+        if raw.endswith("```"):
+            raw = raw[:-3].strip()
+    match = re.search(r"\{.*\}", raw, re.DOTALL)
+    if not match:
+        raise ValueError(f"No JSON object found in model output. Raw (first 300 chars): {raw[:300]!r}")
+    return match.group(0)
+    
 def get_groq_clients():
     """Read all 7 Groq keys fresh every call."""
     clients = []
@@ -26,43 +41,67 @@ def get_groq_clients():
     return clients
 
 def generate_with_fallback(prompt: str) -> str:
-    """Try each model x each Groq key. On failure, rotate."""
+    """Try each model x each Groq key. Log exact errors."""
+
     keys = get_groq_clients()
 
     if not keys:
-        raise RuntimeError("No GROQ keys found. Set GROQ_API_KEY1 through GROQ_API_KEY7 in environment variables.")
+        raise RuntimeError(
+            "No GROQ keys found. Set GROQ_API_KEY1 through GROQ_API_KEY7."
+        )
 
     attempts = []
+
     for model in MODELS:
         for key_num, key in keys:
             attempts.append((model, key, key_num))
 
+    last_error = None
+
     for idx, (model, key, key_num) in enumerate(attempts):
         try:
-            print(f"  → Trying model={model}, key={key_num}...")
+            print(
+                f"  → Trying model={model}, key={key_num}, "
+                f"attempt={idx + 1}/{len(attempts)}..."
+            )
+
             client = Groq(api_key=key)
+
             response = client.chat.completions.create(
                 model=model,
-                messages=[{"role": "user", "content": prompt}],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
                 temperature=0.3,
-                max_tokens=4096
+                max_tokens=6000
             )
-            return response.choices[0].message.content.strip()
+
+            content = response.choices[0].message.content
+
+            if not content:
+                raise RuntimeError("Groq returned empty content")
+
+            print(f"  ✓ Success: model={model}, key={key_num}")
+
+            return content.strip()
+
         except Exception as e:
-            err = str(e)
-            if "429" in err or "rate" in err.lower():
-                print(f"  429 rate limit on key {key_num}. Switching...")
-                time.sleep(5)
-            elif "503" in err or "unavailable" in err.lower():
-                print(f"  503 overload. Waiting 15s...")
-                time.sleep(15)
-            else:
-                print(f"  Unexpected error: {e}")
-                time.sleep(3)
+            last_error = e
 
-    raise RuntimeError("All Groq models and keys exhausted. Try again in a few minutes.")
+            print(
+                f"  ✗ FAILED: model={model}, key={key_num}"
+            )
+            print(f"  ✗ ERROR TYPE: {type(e).__name__}")
+            print(f"  ✗ ERROR DETAILS: {repr(e)}")
 
+            time.sleep(1)
 
+    raise RuntimeError(
+        f"All Groq attempts failed. Last error: {repr(last_error)}"
+    )
 # --- Combined Stage 1+2 Prompt ---
 
 COMBINED_STAGE_1_2_PROMPT = """
@@ -152,13 +191,10 @@ def generate_intent_and_design(user_prompt: str) -> dict:
     prompt = COMBINED_STAGE_1_2_PROMPT.format(user_prompt=user_prompt)
     raw = generate_with_fallback(prompt)
 
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-    raw = raw.strip()
-
-    parsed = json.loads(raw)
+    try:
+        parsed = json.loads(extract_json(raw))
+    except (json.JSONDecodeError, ValueError) as e:
+        raise ValueError(f"Stage1+2 combined call returned invalid JSON: {e}\nRaw (first 500 chars): {raw[:500]!r}")
     ir = IntentIR(**parsed["intent_ir"]).model_dump()
     design = SystemDesign(**parsed["system_design"]).model_dump()
 

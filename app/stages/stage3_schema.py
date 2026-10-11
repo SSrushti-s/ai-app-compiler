@@ -6,6 +6,7 @@ from typing import List, Dict
 from app.utils.groq_client import generate_with_fallback
 from pydantic import BaseModel, field_validator
 from typing import List, Dict, Union
+from app.utils.groq_client import generate_with_fallback, extract_json
 
 class DBField(BaseModel):
     name: str
@@ -105,17 +106,16 @@ Workflows: {workflows}
 def generate_schema(system_design: dict, intent_ir: dict) -> dict:
     # Call 1: DB + API (smaller, focused)
     prompt1 = DB_API_PROMPT.format(
-        entities=json.dumps(intent_ir.get("entities", [])  ),
+        entities=json.dumps(intent_ir.get("entities", [])),
         roles=json.dumps(intent_ir.get("roles", [])),
         api_groups=json.dumps(system_design.get("api_groups", [])),
         auth_strategy=system_design.get("auth_strategy", "")
     )
     raw1 = generate_with_fallback(prompt1)
-    if raw1.startswith("```"):
-        raw1 = raw1.split("```")[1]
-        if raw1.startswith("json"):
-            raw1 = raw1[4:]
-    part1 = json.loads(raw1.strip())
+    try:
+        part1 = json.loads(extract_json(raw1))
+    except (json.JSONDecodeError, ValueError) as e:
+        raise ValueError(f"Stage3 call 1 (DB/API) returned invalid JSON: {e}\nRaw (first 500 chars): {raw1[:500]!r}")
 
     # Call 2: UI + Auth rules (smaller, focused)
     prompt2 = UI_AUTH_PROMPT.format(
@@ -124,18 +124,16 @@ def generate_schema(system_design: dict, intent_ir: dict) -> dict:
         workflows=json.dumps(system_design.get("workflows", []))
     )
     raw2 = generate_with_fallback(prompt2)
-    if raw2.startswith("```"):
-        raw2 = raw2.split("```")[1]
-        if raw2.startswith("json"):
-            raw2 = raw2[4:]
-    part2 = json.loads(raw2.strip())
+    try:
+        part2 = json.loads(extract_json(raw2))
+    except (json.JSONDecodeError, ValueError) as e:
+        raise ValueError(f"Stage3 call 2 (UI/Auth) returned invalid JSON: {e}\nRaw (first 500 chars): {raw2[:500]!r}")
 
     # Merge both parts
     merged = {**part1, **part2}
     validated = AppSchema(**merged)
     return validated.model_dump()
-
-
+    
 if __name__ == "__main__":
     from app.stages.stage1_intent import extract_intent
     from app.stages.stage2_design import generate_system_design
