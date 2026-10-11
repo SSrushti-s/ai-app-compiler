@@ -5,6 +5,7 @@ import time
 import json
 from groq import Groq
 from dotenv import load_dotenv
+from json_repair import repair_json
 from pydantic import BaseModel, field_validator
 from typing import List
 load_dotenv()
@@ -17,18 +18,31 @@ MODELS = [
 
 import re
 
+import re
+from json_repair import repair_json  # 👈 Add this import at the top
+
 def extract_json(raw: str) -> str:
-    """Pull the outermost {...} JSON object out of a model response,
-    regardless of code fences or stray text around it."""
+    """Pull the outermost JSON structure out of a model response,
+    and repair it if it was truncated mid-sentence."""
     raw = raw.strip()
+    
+    # Strip markdown block codes if present
     if raw.startswith("```"):
         raw = re.sub(r"^```(json)?", "", raw, flags=re.IGNORECASE).strip()
         if raw.endswith("```"):
             raw = raw[:-3].strip()
-    match = re.search(r"\{.*\}", raw, re.DOTALL)
+            
+    # Find where the JSON object actually begins
+    match = re.search(r"\{.*", raw, re.DOTALL)
     if not match:
         raise ValueError(f"No JSON object found in model output. Raw (first 300 chars): {raw[:300]!r}")
-    return match.group(0)
+        
+    extracted = match.group(0)
+    
+    # Use json-repair to automatically fix unclosed quotes, brackets, or missing commas
+    repaired = repair_json(extracted)
+    return repaired
+
     
 def get_groq_clients():
     """Read all 7 Groq keys fresh every call."""
